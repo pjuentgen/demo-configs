@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcontribcol
+  labels:
+    app: otelcontribcol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otelcontribcol
+  template:
+    metadata:
+      labels:
+        app: otelcontribcol
+    spec:
+      serviceAccountName: otelcontribcol-serviceaccount
+      containers:
+        - name: otelcontribcol
+          image: otel/opentelemetry-collector-contrib
+          args: ["--config", "/etc/config/config.yaml"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/config
+            - name: varlogpods
+              mountPath: /var/log/pods
+              readOnly: true
+            - name: varlibdockercontainers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+
+
+          imagePullPolicy: IfNotPresent
+          env: 
+            - name: DASH_AUTHORIZATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dash0-secrets
+                  key: dash0-authorization-token
+      volumes:
+        - name: config
+          configMap:
+            name: otelcontribcol-cofigmap
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlibdockercontainers
+          hostPath:
+            path: /var/lib/docker/containers

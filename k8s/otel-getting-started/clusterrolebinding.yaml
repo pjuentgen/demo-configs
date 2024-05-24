@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otelcolcontrib-binding
+  labels:
+    app: otelcontribcol
+subjects:
+- kind: ServiceAccount
+  name: otelcontribcol-serviceaccount
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: otelcontribcol-clusterrole
+  apiGroup: rbac.authorization.k8s.io

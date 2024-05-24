@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-demo-app
+  labels:
+    app: nodejs-demo-app
+spec:
+  selector:
+    matchLabels:
+      app: nodejs-demo-app
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: nodejs-demo-app
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "true"        
+    spec:
+      containers:
+      - name: nodejs-demo-app
+        image: ghcr.io/pjuentgen/node-demoapp:latest
+        imagePullPolicy: Always
+        env:           
+          - name: OTEL_LOG_LEVEL
+            value: "info"
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3          
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"      
