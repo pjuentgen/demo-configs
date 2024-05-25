@@ -91,6 +91,17 @@ data:
             parse_from: attributes["log.file.path"]
             cache:
               size: 128 # default maximum amount of Pods per Node is 110
+          # Example for pinotjs logger to extract the information
+          - type: regex_parser
+            regex: '^.*"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*)".*'
+            parse_from: attributes.log
+            trace:
+              trace_id:
+                parse_from: attributes.trace_id
+              span_id:
+                parse_from: attributes.span_id
+              trace_flags:
+                parse_from: attributes.trace_flags
           # Rename attributes
           - type: move
             from: attributes["log.file.path"]
@@ -196,8 +207,7 @@ data:
           exporters:
             - otlp/dash0
           processors:
-            - batch
-            - filter
+            - batch            
             - resource
           receivers:
             - otlp
