@@ -98,7 +98,7 @@ spec:
           - name: TIME
             value: "500"
           - name: REMOTE_URL
-            value: "http://go-demoapp-service:8080/remote"
+            value: "http://python-demoapp-service:8080/remote"
 
         ports:
         - containerPort: 8080
@@ -124,6 +124,139 @@ spec:
   type: ClusterIP
   selector:
     app: java-demoapp
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-demoapp
+  labels:
+    app: python-demoapp
+spec:
+  selector:
+    matchLabels:
+      app: python-demoapp
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: python-demoapp
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "true"        
+    spec:
+      containers:
+      - name: python-demoapp
+        image: ghcr.io/pjuentgen/python-demoapp:latest
+        imagePullPolicy: Always
+        env:           
+          - name: OTEL_LOG_LEVEL
+            value: "info"
+          - name: PORT
+            value: "8080"
+          - name: TIME
+            value: "500"
+          - name: REMOTE_URL
+            value: "http://dotnet-demoapp-service:8080/remote"
+            # HAS TO BE SPECIFIED BY PYTHON ONLY as ONLY HTTP seems to be enabled
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: http://opentelemetrycollector-service:4318
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3          
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m" 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-demoapp-service
+spec:
+  type: ClusterIP
+  selector:
+    app: python-demoapp
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-demoapp
+  labels:
+    app: dotnet-demoapp
+spec:
+  selector:
+    matchLabels:
+      app: dotnet-demoapp
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: dotnet-demoapp
+      annotations:
+        instrumentation.opentelemetry.io/inject-dotnet: "true"        
+    spec:
+      containers:
+      - name: dotnet-demoapp
+        image: ghcr.io/pjuentgen/dotnet-demoapp:latest
+        imagePullPolicy: Always
+        env:           
+          - name: OTEL_LOG_LEVEL
+            value: "info"
+          - name: PORT
+            value: "8080"
+          - name: TIME
+            value: "500"
+          - name: REMOTE_URL
+            value: "http://go-demoapp-service:8080/remote"
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3          
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m" 
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnet-demoapp-service
+spec:
+  type: ClusterIP
+  selector:
+    app: dotnet-demoapp
   ports:
     - protocol: TCP
       port: 8080
