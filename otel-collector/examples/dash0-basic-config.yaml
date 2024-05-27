@@ -1,0 +1,46 @@
+exporters:
+  otlp/dash0:
+    auth:
+      authenticator: bearertokenauth/dash0
+    endpoint: ingress.eu-west-1.aws.dash0.com:4317
+extensions:
+  bearertokenauth/dash0:
+    scheme: Bearer
+    token: ${env:DASH0_AUTHORIZATION_TOKEN}
+processors:
+  batch: {}
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+service:
+  extensions:
+  - bearertokenauth/dash0
+  pipelines:
+    traces:
+      exporters:
+      - otlp/dash0
+      processors:
+      - batch
+      receivers:
+      - otlp
+    metrics:
+      exporters:
+      - otlp/dash0
+      processors:
+      - batch
+      receivers:
+      - otlp
+    logs:
+      exporters:
+      - otlp/dash0
+      processors:
+      - batch
+      receivers:
+      - otlp
+  telemetry:
+    metrics:
+      address: :8888
