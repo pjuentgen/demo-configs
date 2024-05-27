@@ -7,8 +7,6 @@ metadata:
 data:
   config.yaml: |
     exporters:
-      debug:
-        verbosity: detailed
       otlp/dash0:
         auth:
           authenticator: bearertokenauth/dash0
@@ -19,17 +17,6 @@ data:
         token: ${env:DASH_AUTHORIZATION_TOKEN}
     processors:
       batch: {}
-      resource/k8s_events:
-        attributes:
-          - action: insert
-            key: job
-            value: 'integrations/kubernetes/eventhandler'
-      resource:
-        attributes:
-          - action: insert
-            key: rawformat
-            value: raw
-
     receivers:
       k8s_events:
         namespaces: default
@@ -46,44 +33,14 @@ data:
         include_file_path: true
         include_file_name: false
         operators:
-          # Find out which format is used by kubernetes
-          - type: router
-            id: get-format
-            routes:
-              - output: parser-docker
-                expr: 'body matches "^\\{"'
-              - output: parser-crio
-                expr: 'body matches "^[^ Z]+ "'
-              - output: parser-containerd
-                expr: 'body matches "^[^ Z]+Z"'
-          # Parse CRI-O format
-          - type: regex_parser
-            id: parser-crio
-            regex: '^(?P<time>[^ Z]+) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$'
-            output: extract_metadata_from_filepath
-            timestamp:
-              parse_from: attributes.time
-              layout_type: gotime
-              layout: '2006-01-02T15:04:05.999999999Z07:00'
-          # Parse CRI-Containerd format
-          - type: regex_parser
-            id: parser-containerd
-            regex: '^(?P<time>[^ ^Z]+Z) (?P<stream>stdout|stderr) (?P<logtag>[^ ]*) ?(?P<log>.*)$'
-            output: extract_metadata_from_filepath
-            timestamp:
-              parse_from: attributes.time
-              layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-          # Parse Docker format
+        # Parse Docker format
           - type: json_parser
-            id: parser-docker
             output: extract_metadata_from_filepath
             timestamp:
               parse_from: attributes.time
               layout: '%Y-%m-%dT%H:%M:%S.%LZ'
-          - type: move
-            from: attributes.log
-            to: body
-          # Extract metadata from file path
+        # Example for pinotjs logger to extract the information
+        
           - type: regex_parser
             id: extract_metadata_from_filepath
             # Pod UID is not always 36 characters long
@@ -91,9 +48,10 @@ data:
             parse_from: attributes["log.file.path"]
             cache:
               size: 128 # default maximum amount of Pods per Node is 110
-          # Example for pinotjs logger to extract the information
+          # Rename attributes
           - type: regex_parser
-            regex: '^.*"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*)".*'
+            regex: '"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*).*"msg":"(?P<message>.*)"'
+          #regex: '^.*"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*)".*'
             parse_from: attributes.log
             trace:
               trace_id:
@@ -102,21 +60,26 @@ data:
                 parse_from: attributes.span_id
               trace_flags:
                 parse_from: attributes.trace_flags
-          # Rename attributes
+          - type: move
+            from: attributes.log
+            to: body
+          - type: move
+            from: attributes.message
+            to: body
           - type: move
             from: attributes["log.file.path"]
             to: resource["filename"]
           - type: move
             from: attributes.container_name
-            to: resource["container"]
+            to: resource["k8s.container.name"]
           - type: move
             from: attributes.namespace
-            to: resource["namespace"]
+            to: resource["k8s.namespace.namespace"]
           - type: move
             from: attributes.pod_name
-            to: resource["pod"]
+            to: resource["k8s.pod.name"]
           - type: add
-            field: resource["cluster"]
+            field: resource["k8s.cluster.name"]
             value: 'your-cluster-name' # Set your cluster name here
       prometheus:
         config:
@@ -142,7 +105,6 @@ data:
                 ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
                 insecure_skip_verify: false
                 server_name: kubernetes
-
             - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
               job_name: integrations/kubernetes/kubelet
               kubernetes_sd_configs:
@@ -164,7 +126,6 @@ data:
                 ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
                 insecure_skip_verify: false
                 server_name: kubernetes
-
             - job_name: integrations/kubernetes/kube-state-metrics
               kubernetes_sd_configs:
                 - role: pod
@@ -177,7 +138,6 @@ data:
                 - source_labels: [__name__]
                   action: keep
                   regex: 'kube_daemonset.*|kube_deployment_metadata_generation|kube_deployment_spec_replicas|kube_deployment_status_observed_generation|kube_deployment_status_replicas_available|kube_deployment_status_replicas_updated|kube_horizontalpodautoscaler_spec_max_replicas|kube_horizontalpodautoscaler_spec_min_replicas|kube_horizontalpodautoscaler_status_current_replicas|kube_horizontalpodautoscaler_status_desired_replicas|kube_job.*|kube_namespace_status_phase|kube_node.*|kube_persistentvolumeclaim_resource_requests_storage_bytes|kube_pod_container_info|kube_pod_container_resource_limits|kube_pod_container_resource_requests|kube_pod_container_status_last_terminated_reason|kube_pod_container_status_restarts_total|kube_pod_container_status_waiting_reason|kube_pod_info|kube_pod_owner|kube_pod_start_time|kube_pod_status_phase|kube_pod_status_reason|kube_replicaset.*|kube_resourcequota|kube_statefulset.*'
-
             - job_name: integrations/node_exporter
               kubernetes_sd_configs:
                 - role: pod
@@ -198,7 +158,6 @@ data:
                 - source_labels: [__name__]
                   action: keep
                   regex: 'node_cpu.*|node_exporter_build_info|node_filesystem.*|node_memory.*|process_cpu_seconds_total|process_resident_memory_bytes'
-
     service:
       extensions:
         - bearertokenauth/dash0
@@ -207,8 +166,7 @@ data:
           exporters:
             - otlp/dash0
           processors:
-            - batch            
-            - resource
+            - batch                    
           receivers:
             - otlp
             - k8s_events
@@ -230,5 +188,5 @@ data:
             - otlp
         logs/k8s_events:
           receivers: [k8s_events]
-          processors: [batch, resource/k8s_events]
+          processors: [batch]
           exporters: [otlp/dash0]

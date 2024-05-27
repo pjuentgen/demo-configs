@@ -27,9 +27,25 @@ receivers:
     include_file_path: true
     include_file_name: false
     operators:
-      # Example for pinotjs logger to extract the information
+     # Parse Docker format
+      - type: json_parser
+        output: extract_metadata_from_filepath
+        timestamp:
+          parse_from: attributes.time
+          layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+     # Example for pinotjs logger to extract the information
+     
       - type: regex_parser
-        regex: '^.*"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*)".*'
+        id: extract_metadata_from_filepath
+        # Pod UID is not always 36 characters long
+        regex: '^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{16,36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$'
+        parse_from: attributes["log.file.path"]
+        cache:
+          size: 128 # default maximum amount of Pods per Node is 110
+      # Rename attributes
+      - type: regex_parser
+        regex: '"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*).*"msg":"(?P<message>.*)"'
+      #regex: '^.*"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*)".*'
         parse_from: attributes.log
         trace:
           trace_id:
@@ -38,21 +54,26 @@ receivers:
             parse_from: attributes.span_id
           trace_flags:
             parse_from: attributes.trace_flags
-      # Rename attributes
+      - type: move
+        from: attributes.log
+        to: body
+      - type: move
+        from: attributes.message
+        to: body
       - type: move
         from: attributes["log.file.path"]
         to: resource["filename"]
       - type: move
         from: attributes.container_name
-        to: resource["container"]
+        to: resource["k8s.container.name"]
       - type: move
         from: attributes.namespace
-        to: resource["namespace"]
+        to: resource["k8s.namespace.namespace"]
       - type: move
         from: attributes.pod_name
-        to: resource["pod"]
+        to: resource["k8s.pod.name"]
       - type: add
-        field: resource["cluster"]
+        field: resource["k8s.cluster.name"]
         value: 'your-cluster-name' # Set your cluster name here
   prometheus:
     config:
