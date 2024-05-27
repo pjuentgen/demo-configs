@@ -45,7 +45,6 @@ receivers:
       # Rename attributes
       - type: regex_parser
         regex: '"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*).*"msg":"(?P<message>.*)"'
-      #regex: '^.*"trace_id":"(?P<trace_id>\S+)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*)".*'
         parse_from: attributes.log
         trace:
           trace_id:
@@ -54,12 +53,13 @@ receivers:
             parse_from: attributes.span_id
           trace_flags:
             parse_from: attributes.trace_flags
-      - type: move
-        from: attributes.log
+      - type: regex_parser
+        regex: '"msg":"(?P<message>.*)"'      
+        parse_from: attributes.log
         to: body
-      - type: move
-        from: attributes.message
-        to: body
+      - type: add
+        field: body
+        value: attributes.message
       - type: move
         from: attributes["log.file.path"]
         to: resource["filename"]
