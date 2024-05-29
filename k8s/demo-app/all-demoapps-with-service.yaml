@@ -218,7 +218,8 @@ spec:
       labels:
         app: dotnet-demoapp
       annotations:
-        instrumentation.opentelemetry.io/inject-dotnet: "true"        
+      ## This can crash the service
+        instrumentation.opentelemetry.io/inject-dotnet: "false"        
     spec:
       containers:
       - name: dotnet-demoapp

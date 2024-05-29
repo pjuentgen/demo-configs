@@ -17,7 +17,7 @@ spec:
       serviceAccountName: otelcontribcol-serviceaccount
       containers:
         - name: otelcontribcol
-          image: otel/opentelemetry-collector-contrib
+          image: otel/opentelemetry-collector-contrib:0.101.0
           args: ["--config", "/etc/config/config.yaml"]
           volumeMounts:
             - name: config
