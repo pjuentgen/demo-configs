@@ -3,12 +3,12 @@ kind: ClusterRoleBinding
 metadata:
   name: otelcolcontrib-binding
   labels:
-    app: otelcontribcol
+    app: otel-collector
 subjects:
 - kind: ServiceAccount
-  name: otelcontribcol-serviceaccount
+  name: otel-collector-serviceaccount
   namespace: default
 roleRef:
   kind: ClusterRole
-  name: otelcontribcol-clusterrole
+  name: otel-collector-clusterrole
   apiGroup: rbac.authorization.k8s.io

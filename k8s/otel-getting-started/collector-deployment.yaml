@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: otelcontribcol
+  name: otel-collector
   labels:
-    app: otelcontribcol
+    app: otel-collector
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: otelcontribcol
+      app: otel-collector
   template:
     metadata:
       labels:
-        app: otelcontribcol
+        app: otel-collector
     spec:
-      serviceAccountName: otelcontribcol-serviceaccount
+      serviceAccountName: otel-collector-serviceaccount
       containers:
-        - name: otelcontribcol
+        - name: otel-collector
           image: otel/opentelemetry-collector-contrib:0.101.0
           args: ["--config", "/etc/config/config.yaml"]
           volumeMounts:
@@ -40,7 +40,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: otelcontribcol-cofigmap
+            name: otel-collector-cofigmap
         - name: varlogpods
           hostPath:
             path: /var/log/pods

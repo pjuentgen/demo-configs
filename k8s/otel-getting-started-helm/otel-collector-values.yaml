@@ -1,0 +1,90 @@
+mode: daemonset
+service:
+  enabled: true
+image:
+  repository: "otel/opentelemetry-collector-contrib"
+
+presets:
+  logsCollection:
+    enabled: true
+    includeCollectorLogs: true
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: true
+    extractAllPodAnnotations: true
+  kubeletMetrics:
+    enabled: true
+  kubernetesEvents:
+    enabled: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+
+config:
+  exporters:
+    otlp/dash0:
+      # auth:
+        # authenticator: bearertokenauth/dash0
+      endpoint: ingress.eu-west-1.aws.dash0.com:4317
+      headers:
+       Authorization: ${DASH0_AUTHORIZATION_TOKEN}
+    debug: {}
+  extensions:
+    health_check:
+      endpoint: ${env:MY_POD_IP}:13133
+  processors:
+    batch: {}
+    memory_limiter: null
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: ${env:MY_POD_IP}:4317
+        http:
+          endpoint: ${env:MY_POD_IP}:4318
+  service:
+    telemetry:
+      metrics:
+        address: ${env:MY_POD_IP}:8888
+    extensions:
+      - health_check
+      # - "bearertokenauth/dash0":
+      #     scheme: Bearer
+      #     token: ${env:DASH0_AUTHORIZATION_TOKEN}
+    pipelines:
+      logs:
+        exporters:
+          - otlp/dash0
+        processors:
+          - batch
+        receivers:
+          - otlp
+      metrics:
+        exporters:
+          - otlp/dash0
+        processors:
+          - batch
+        receivers:
+          - otlp
+          - prometheus
+      traces:
+        exporters:
+          - otlp/dash0
+        processors:
+          - batch
+        receivers:
+          - otlp
+
+extraEnvs:
+ - name: DASH0_AUTHORIZATION_TOKEN
+   valueFrom:
+     secretKeyRef:
+       name: dash0-secrets
+       key: dash0-authorization-token
+       optional: false
