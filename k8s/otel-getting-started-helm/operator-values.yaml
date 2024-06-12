@@ -2,6 +2,7 @@
 manager:
   collectorImage:
     repository: "otel/opentelemetry-collector-k8s"
+  
 #   image:
 #     repository: ghcr.io/open-telemetry/opentelemetry-operator/opentelemetry-operator
 #     tag: ""
@@ -183,7 +184,7 @@ manager:
 #   timeoutSeconds: 10
 
 #   ## Provide selectors for your objects
-#   namespaceSelector: {}
+#   Selector: {}
 #   objectSelector: {}
 
 #   ## https://github.com/open-telemetry/opentelemetry-helm-charts/blob/main/charts/opentelemetry-operator/README.md#tls-certificate-requirement

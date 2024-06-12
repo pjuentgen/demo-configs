@@ -2,12 +2,9 @@ apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: otel-collector
+  namespace: opentelemetry
 spec:
   mode: daemonset
-  volumeMounts:
-    - name: secret-volume
-      mountPath: /etc/secrets
-      readOnly: true
   env:
     - name: DASH_AUTHORIZATION_TOKEN
       valueFrom:
@@ -24,7 +21,7 @@ spec:
       bearertokenauth/dash0:
         scheme: Bearer
         token: ${env:DASH_AUTHORIZATION_TOKEN}
-      health_check:
+      health_check: {}
     processors:
       batch: {}
       memory_limiter:
@@ -33,53 +30,13 @@ spec:
         spike_limit_percentage: 30
     receivers:
       k8s_events:
-        namespaces:
+        namespaces: {}
       otlp:
-        protocols:
+        protocols: 
           grpc:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
-      filelog:
-        include:
-          - /var/log/pods/*/*/*.log
-        start_at: beginning
-        include_file_path: true    
-          operators:
-            - id: container-parser
-              type: container
-              add_metadata_from_filepath: true
-            - type: regex_parser
-              regex: '"trace_id":"(?P<trace_id>\S*)","span_id":"(?P<span_id>\S*)","trace_flags":"(?P<trace_flags>\d*)"'
-              on_error: send_quiet
-              trace:
-                trace_id:
-                  parse_from: attributes.trace_id
-                span_id:
-                  parse_from: attributes.span_id
-                trace_flags:
-                  parse_from: attributes.trace_flags
-            - type: trace_parser
-              trace_id:
-                parse_from: attributes.trace_id
-              span_id:
-                parse_from: attributes.span_id
-              trace_flags:
-                parse_from: attributes.trace_flags
-            - type: move
-              from: attributes["k8s.container.name"]
-              to: resource["container.name"]
-            - type: move
-              from: attributes["k8s.pod.name"]
-              to: resource["k8s.pod.name"]
-            - type: move
-              from: attributes["k8s.pod.uid"]
-              to: resource["k8s.pod.uid"]
-            - type: move
-              from: attributes["k8s.namespace.name"]
-              to: resource["k8s.namespace.name"]
-            - type: remove
-              field: attributes["k8s.container.restart_count"]
       prometheus:
         config:
           scrape_configs:
@@ -170,7 +127,6 @@ spec:
           receivers:
             - otlp
             - k8s_events
-            - filelog
         metrics:
           exporters:
             - otlp/dash0
