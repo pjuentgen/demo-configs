@@ -4,7 +4,7 @@ metadata:
   name: otel-instrumentation
 spec:
   exporter:
-    endpoint: http://opentelemetry-collector.opentelemetry:4317
+    endpoint: http://otel-collector-collector-headless.opentelemetry:4317
   propagators:
     - tracecontext
     - baggage
