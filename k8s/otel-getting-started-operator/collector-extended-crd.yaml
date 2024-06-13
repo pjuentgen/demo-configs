@@ -5,14 +5,15 @@ metadata:
   namespace: opentelemetry
 spec:
   mode: daemonset
-  targetAllocator:
+  targetAllocator:    
     enabled: true
-    replicas: 2
+    replicas: 1
     image: ghcr.io/open-telemetry/opentelemetry-operator/target-allocator:main    
-    allocationStrategy: "per-node"
-    serviceAccount: opentelemetry-targetallocator-sa
+    allocationStrategy: "per-node"    
     prometheusCR:
       enabled: true
+      serviceMonitorSelector: {}
+      podMonitorSelector: {}
   volumeMounts:
     - name: varlogpods
       mountPath: /var/log/pods
@@ -33,8 +34,8 @@ spec:
         secretKeyRef:
           name: dash0-secrets
           key: dash0-authorization-token
-  config: 
-    exporters:
+  config:
+    exporters: 
       otlp/dash0:
         auth:
           authenticator: bearertokenauth/dash0
@@ -58,6 +59,12 @@ spec:
             scrape_interval: 30s
             static_configs:
             - targets: [ '0.0.0.0:8888' ]
+            metric_relabel_configs:
+            - action: labeldrop
+              regex: (id|name)
+            - action: labelmap
+              regex: label_(.+)
+              replacement: $$1
         target_allocator:
           endpoint: http://otelcol-targetallocator
           interval: 30s
@@ -110,9 +117,6 @@ spec:
             to: resource["k8s.namespace.name"]
           - type: remove
             field: attributes["k8s.container.restart_count"]
-
-          # - type: remove
-          #   field: attributes["time"]
     service:
       extensions:
         - bearertokenauth/dash0
