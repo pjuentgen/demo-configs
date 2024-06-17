@@ -14,7 +14,7 @@ data:
     extensions:
       bearertokenauth/dash0:
         scheme: Bearer
-        token: ${env:DASH_AUTHORIZATION_TOKEN}
+        token: ${env:DASH0_AUTHORIZATION_TOKEN}
     processors:
       batch: {}
 

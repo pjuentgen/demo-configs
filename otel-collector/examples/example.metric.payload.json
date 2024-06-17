@@ -1,0 +1,64 @@
+curl -X POST -i "http://localhost:4318/v1/metrics" -H "Content-Type: application/json" -d '{
+    "resourceMetrics": [
+        {
+            "resource": {
+                "attributes": [
+                    {
+                        "key": "non.semconv.attribute.pju",
+                        "value": {
+                            "stringValue": "you-got-it-you-name-it-"
+                        }
+                    },{
+                        "key": "service.name",
+                        "value": {
+                            "stringValue": "pju-test-service"
+                        }
+                    }
+                ]
+            },
+            "scopeMetrics": [
+                {
+                    "metrics": [
+                        {
+                            "name": "super-awesome-counter",
+                            "sum": {
+                                "aggregationTemporality": 2,
+                                "dataPoints": [
+                                    {
+                                        "asInt": "123",
+                                        "attributes": [
+                                            {
+                                                "key": "my-label",
+                                                "value": {
+                                                    "stringValue": "my-label-value-1"
+                                                }
+                                            }
+                                        ],
+                                        "startTimeUnixNano": "1718368680000000000",
+                                        "timeUnixNano": "1718368680000000000"
+                                    },
+                                    {
+                                        "asInt": "456",
+                                        "attributes": [
+                                            {
+                                                "key": "my-label-2",
+                                                "value": {
+                                                    "stringValue": "my-label-value2"
+                                                }
+                                            }
+                                        ],
+                                        "startTimeUnixNano": "1581452772000000321",
+                                        "timeUnixNano": "1718368680000000000"
+                                    }
+                                ],
+                                "isMonotonic": true
+                            },
+                            "unit": "1"
+                        }
+                    ],
+                    "scope": {}
+                }
+            ]
+        }
+    ]
+}'

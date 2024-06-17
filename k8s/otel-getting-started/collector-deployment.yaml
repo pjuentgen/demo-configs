@@ -32,7 +32,7 @@ spec:
 
           imagePullPolicy: IfNotPresent
           env: 
-            - name: DASH_AUTHORIZATION_TOKEN
+            - name: DASH0_AUTHORIZATION_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: dash0-secrets
