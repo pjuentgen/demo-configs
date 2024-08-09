@@ -16,11 +16,11 @@ opentelemetry-collector:
         
       pipelines:
         traces:
-          exporters: [otlp/dash0,spanmetrics]
+          exporters: [otlp/dash0,otlp,spanmetrics,debug]
         logs:
-          exporters: [otlp/dash0]
+          exporters: [otlp/dash0,opensearch,debug]
         metrics:
-          exporters: [otlp/dash0]
+          exporters: [otlp/dash0, otlphttp/prometheus,debug]
   extraEnvs:
   - name: DASH0_AUTHORIZATION_TOKEN
     valueFrom:
