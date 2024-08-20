@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio
+  namespace: istio-system
+  annotations:
+    meta.helm.sh/release-name: istiod
+    meta.helm.sh/release-namespace: istio-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    install.operator.istio.io/owning-resource: unknown
+    istio.io/rev: default
+    operator.istio.io/component: Pilot
+    release: istiod
+data:
+  meshNetworks: |-
+    networks: {}
+
+  mesh: |-
+    defaultConfig:
+      discoveryAddress: istiod.istio-system.svc:15012
+    defaultProviders:
+      tracing:
+        - opentelemetry
+    extensionProviders:
+      - name: "opentelemetry"
+        opentelemetry:
+          port: 4317
+          service: ingress.eu-west-1.aws.dash0.com:4317
+          http:
+            path: "/v1/traces"
+            timeout: 10s
+            headers:
+            - name: "Authorization"
+              value: "Bearer auth_IhKlUuBKyWRggAOrfYxhlhxw7uYoycC9"
+    enablePrometheusMerge: true
+    rootNamespace: null
+    trustDomain: cluster.local
+
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: istio-system
+spec:
+  accessLogging:
+    - providers:
+      - name: opentelemetry
+  tracing:
+  - providers:
+    - name: opentelemetry
+    randomSamplingPercentage: 100
