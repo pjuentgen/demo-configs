@@ -1,0 +1,13 @@
+spec:
+  template:
+    spec:
+      volumes:
+        - name: lua-scripts
+          configMap:
+            name: fluent-bit-lua-scripts  # This is the name of the ConfigMap holding the Lua script
+      containers:
+        - name: fluent-bit
+          volumeMounts:
+            - name: lua-scripts
+              mountPath: /fluent-bit/scripts/check_json.lua
+              subPath: check_json.lua

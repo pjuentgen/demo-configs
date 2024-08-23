@@ -8,41 +8,88 @@ env:
 config:
 
   filters: |
+
       [FILTER]
           Name kubernetes
           Match kube.*
-          Merge_Log On
+          # Merge_Log On
           Keep_Log Off
           K8S-Logging.Parser On
-          K8S-Logging.Exclude On
+          # K8S-Logging.Exclude On
 
-      [FILTER]
-          Name nest
-          Match kube.*
-          Operation lift
-          Nested_under  kubernetes
-          add_prefix kubernetes_
 
-      [FILTER]
-          Name nest
-          Match kube.*
-          Operation lift
-          Nested_under  kubernetes_labels
+      # [FILTER]
+      #     Name            nest
+      #     Match           kube.*
+      #     Operation       lift
+      #     Nested_under    kubernetes
+      #     Add_prefix      kubernetes.
+
+      # [FILTER]
+      #     Name record_modifier
+      #     Match kube.*
+      #     Remove_key kubernetes.container_hash
+      #     Remove_key kubernetes.docker_id
+      #     Remove_key kubernetes.pod_id
+
+      # [FILTER]
+      #     Name            nest
+      #     Match           kube.*
+      #     Operation       nest
+      #     Wildcard        kubernetes.*
+      #     Nest_under      kubernetes
+      #     Remove_prefix   kubernetes.
+      
+      # [FILTER]
+      #     Name nest
+      #     Match kube.*
+      #     Operation nest
+      #     Wildcard kubernetes.pod_name
+      #     Remove_prefix kubernetes.
+
+      # [FILTER]
+      #     Name modify
+      #     Match *
+      #     Rename pkubernetes.pod_name kubernetes.pod.name
 
       # [FILTER]
       #     Name nest
       #     Match kube.*
       #     Operation lift
-      #     Wildcard k8s.*
+      #     Nested_under  kubernetes
+      #     add_prefix kubernetes_
 
-      [FILTER]
-          Name modify
-          Match kube.*
-          Rename log content
-          Rename kubernetes_pod_id k8s.pod.id
-          Rename kubernetes_pod_name k8s.pod.name
-          Rename kubernetes_namespace_name k8s.namespace.name
-          Rename kubernetes_container_name k8s.container.name
+      # [FILTER]
+      #     Name nest
+      #     Match kube.*
+      #     Operation lift
+      #     Nested_under  kubernetes_labels
+
+      # [PROCESSOR]
+      #     Name  opentelemetry_envelope
+      #     Match  *
+
+      # [PROCESSOR]
+      #     Name content_modifier
+      #     Context otel_resource_attributes
+      #     Action upsert
+      #     Key service.name
+      #     Value my-service
+
+      # # [FILTER]
+      # #     Name nest
+      # #     Match kube.*
+      # #     Operation lift
+      # #     Wildcard k8s.*
+
+      # [FILTER]
+      #     Name modify
+      #     Match kube.*
+      #     Rename log content
+      #     Rename kubernetes_pod_id k8s.pod.id
+      #     Rename kubernetes_pod_name k8s.pod.name
+      #     Rename kubernetes_namespace_name k8s.namespace.name
+      #     Rename kubernetes_container_name k8s.container.name
           
   
   outputs: |
@@ -56,8 +103,8 @@ config:
         Logs_uri /v1/logs
         Traces_uri /v1/traces
         Tls  On
-        logs_body_key message
-        logs_span_id_message_key span_id
-        logs_trace_id_message_key trace_id
-        logs_severity_text_message_key loglevel
-        logs_severity_number_message_key lognum
+        logs_body_key body
+        # logs_span_id_message_key span_id
+        # logs_trace_id_message_key trace_id
+        # logs_severity_text_message_key loglevel
+        # logs_severity_number_message_key lognum
