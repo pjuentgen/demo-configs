@@ -6,7 +6,6 @@ service:
     HTTP_Listen: 0.0.0.0
     HTTP_Port: 2020
     Health_Check: On
-    Parsers_File: "/fluent-bit/etc/conf/custom_parsers.conf"
 
 pipeline:
   inputs:
@@ -22,6 +21,7 @@ pipeline:
       match: kube.*
       merge_log: on
       keep_log: off
+      K8S-Logging.Exclude: on
    
   outputs:
     - name: opentelemetry
