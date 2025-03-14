@@ -1,0 +1,34 @@
+service:
+  flush: 1
+  log_level: trace
+
+pipeline:
+  inputs:
+    - name: dummy
+      rate: 3
+      processors:
+        logs:
+
+          - name: opentelemetry_envelope
+
+          - name: content_modifier
+            context: otel_resource_attributes
+            action: upsert
+            key: service.name
+            value: my-fluentbit-service
+            
+  outputs:
+    - name: opentelemetry
+      match: "*"
+      host: ingress.eu-west-1.aws.dash0.com
+      port: 443
+      header: Authorization Bearer ${DASH0_AUTHORIZATION_TOKEN}
+      metrics_uri: /v1/metrics
+      logs_uri: /v1/logs
+      traces_uri: /v1/traces
+      tls: On
+      logs_body_key: $message
+      logs_span_id_message_key: span_id
+      logs_trace_id_message_key: trace_id
+      logs_severity_text_message_key: loglevel
+      logs_severity_number_message_key: lognum
