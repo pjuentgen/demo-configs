@@ -18,8 +18,6 @@ spec:
     metadata:
       labels:
         app: node-demoapp
-      annotations:
-        instrumentation.opentelemetry.io/inject-nodejs: "true"        
     spec:
       containers:
       - name: node-demoapp
